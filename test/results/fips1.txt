@@ -1,0 +1,14 @@
+=== fips_enabled = 1
+=== Test 1: normal read
+jent_read: ok, got 32 bytes: 79 04 2e 12 85 b9 ba 8b ...
+=== Test 2: one permanent failure
+jent_read: ok, got 32 bytes: aa ab b7 ce 43 b5 65 17 ...
+=== Test 3: five permanent failures in a row
+jent_read: ok, got 32 bytes: 86 ea c2 c0 b2 78 aa e9 ...
+=== Done
+[    0.789070] Jitter RNG permanent health test failure, retrying with a new collector
+[    0.802457] Jitter RNG permanent health test failure, retrying with a new collector
+[    0.809774] Jitter RNG permanent health test failure, retrying with a new collector
+[    0.816860] Jitter RNG permanent health test failure, retrying with a new collector
+[    0.823910] Jitter RNG permanent health test failure, retrying with a new collector
+[    0.831327] Jitter RNG permanent health test failure, retrying with a new collector

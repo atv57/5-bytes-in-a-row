@@ -1,0 +1,6 @@
+=== fips_enabled = 1
+=== Test 1: normal read
+jent_read: ok, got 32 bytes: d7 b3 77 7d 90 ff b7 68 ...
+=== Test 2: one permanent failure
+[    0.838667] Kernel panic - not syncing: Jitter RNG permanent health test failure
+[    0.839828] CPU: 0 UID: 0 PID: 99 Comm: jent_read Not tainted 7.4.0-rc2-gb3dfbde62cf1-dirty #7 PREEMPT(lazy) 

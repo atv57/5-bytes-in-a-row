@@ -1,0 +1,66 @@
+diff --git a/crypto/jitterentropy-kcapi.c b/crypto/jitterentropy-kcapi.c
+index 652852649..e74bdc781 100644
+--- a/crypto/jitterentropy-kcapi.c
++++ b/crypto/jitterentropy-kcapi.c
+@@ -216,6 +216,25 @@ static int jent_kcapi_init(struct crypto_tfm *tfm)
+ 	return ret;
+ }
+ 
++static int jent_kcapi_new_collector(struct jitterentropy *rng)
++{
++	struct rand_data *ec;
++
++	ec = jent_entropy_collector_alloc(CONFIG_CRYPTO_JITTERENTROPY_OSR, 0,
++					  &rng->hash_state);
++	if (!ec)
++		return -ENOMEM;
++
++	if (jent_entropy_init(0, 0, NULL, ec)) {
++		jent_entropy_collector_free(ec);
++		return -EAGAIN;
++	}
++
++	jent_entropy_collector_free(rng->entropy_collector);
++	rng->entropy_collector = ec;
++	return 0;
++}
++
+ static int jent_kcapi_random(struct crypto_rng *tfm,
+ 			     const u8 *src, unsigned int slen,
+ 			     u8 *rdata, unsigned int dlen)
+@@ -227,20 +246,22 @@ static int jent_kcapi_random(struct crypto_rng *tfm,
+ 
+ 	ret = jent_read_entropy(rng->entropy_collector, rdata, dlen);
+ 
+-	if (ret == -3) {
+-		/* Handle permanent health test error */
+-		/*
+-		 * If the kernel was booted with fips=1, it implies that
+-		 * the entire kernel acts as a FIPS 140 module. In this case
+-		 * an SP800-90B permanent health test error is treated as
+-		 * a FIPS module error.
+-		 */
+-		if (fips_enabled)
+-			panic("Jitter RNG permanent health test failure\n");
++	while (ret == -3) {
++		pr_warn_ratelimited("Jitter RNG permanent health test failure, retrying with a new collector\n");
++		cond_resched();
++
++		ret = jent_kcapi_new_collector(rng);
++		if (ret == -ENOMEM)
++			break;
++		if (ret) {
++			ret = -3;
++			continue;
++		}
++
++		ret = jent_read_entropy(rng->entropy_collector, rdata, dlen);
++	}
+ 
+-		pr_err("Jitter RNG permanent health test failure\n");
+-		ret = -EFAULT;
+-	} else if (ret == -2) {
++	if (ret == -2) {
+ 		/* Handle intermittent health test error */
+ 		pr_warn_ratelimited("Reset Jitter RNG due to intermittent health test failure\n");
+ 		ret = -EAGAIN;
